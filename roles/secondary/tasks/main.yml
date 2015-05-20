@@ -1,0 +1,47 @@
+- name: (SSSSSH)
+  copy: >
+    dest={{ ansible_env.HOME }}/.pgpass
+    content='{{ hostvars['tower-1']['ansible_default_ipv4']['address'] }}:5432:replication:repl:{{ repl_pw }}'
+    mode=0600
+
+- name: Copy init DBs from master
+  command: pg_basebackup -h {{ hostvars['tower-1']['ansible_default_ipv4']['address'] }} -D {{ dbpath }} -U repl -X stream
+           creates={{ dbpath }}/PG_VERSION
+
+- name: Ensure pgsql is listening on IP
+  lineinfile: dest={{ dbpath }}/postgresql.conf
+              regexp=^listen_addresses
+              line="listen_addresses = '{{ ansible_default_ipv4.address }}'"
+              state=present
+
+- name: Ensure pgsql service is started
+  service: name=postgresql-9.4 state=started enabled=true
+  sudo: yes
+  sudo_user: root
+
+- name: Ensure pgsql is hot standby
+  lineinfile: dest={{ dbpath }}/postgresql.conf
+              regexp=^hot_standby
+              line="hot_standby = on"
+              state=present
+  notify: restartdb
+
+- name: Ensure streaming mode is set
+  lineinfile: >
+    dest={{ dbpath }}/recovery.conf
+    create=yes state=present
+    regexp=^standby_mode
+    line="standby_mode = 'on'"
+    mode=0600
+  notify: restartdb
+
+- name: Ensure streaming conninfo present
+  lineinfile: >
+    dest={{ dbpath }}/recovery.conf
+    create=yes state=present
+    regexp=^primary_conninfo
+    line="primary_conninfo = 'host={{ hostvars['tower-1']['ansible_default_ipv4']['address'] }} port=5432 user=repl password={{ repl_pw }}'"
+    mode=0600
+  notify: restartdb
+
+

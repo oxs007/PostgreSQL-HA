@@ -1,0 +1,3 @@
+dbuser: awx
+dbname: awx
+dbpath: /var/lib/pgsql/9.4/data

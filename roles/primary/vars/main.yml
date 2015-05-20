@@ -1,0 +1,6 @@
+dbuser: awx
+dbname: awx
+dbpath: /var/lib/pgsql/9.4/data
+initdb:
+  "6": /sbin/service postgresql-9.4 initdb
+  "7": /usr/pgsql-9.4/bin/postgresql94-setup initdb

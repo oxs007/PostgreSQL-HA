@@ -1,0 +1,52 @@
+- name: initdb
+  command: "{{ initdb[ansible_distribution_major_version] }} creates={{ dbpath }}/PG_VERSION"
+  sudo: yes
+  sudo_user: root
+
+- name: Template postgres conf
+  template:
+    src: postgres.conf.j2
+    dest: '{{ dbpath }}/postgres.conf'
+
+- name: Ensure pgsql service is started
+  service: name=postgresql-9.4 state=started enabled=true
+  sudo: yes
+  sudo_user: root
+
+# This will be much easier in 1.9 with the hash() filter
+- name: Create encrypted password
+  shell: echo -n {{ pw }}{{ dbuser }} | /usr/bin/openssl dgst -md5
+  register: towerpw
+
+- name: Ensure DB user exists
+  postgresql_user:
+    name={{ dbuser }}
+    encrypted=True
+    password="md5{{ towerpw.stdout | regex_replace('.+?\s','') }}"
+
+- name: Ensure Tower DB exists
+  postgresql_db:
+    name={{ dbname }}
+    owner={{ dbuser }}
+
+# This will be much easier in 1.9 with the hash() filter
+- name: Create encrypted repl password
+  shell: echo -n {{ repl_pw }}repl | /usr/bin/openssl dgst -md5
+  register: replpw
+
+- name: Ensure replication user exists
+  postgresql_user:
+    name=repl
+    encrypted=True
+    role_attr_flags="LOGIN,REPLICATION"
+    password="md5{{ replpw.stdout | regex_replace('.+?\s','') }}"
+
+- name: Template pg_hba conf
+  template:
+    src: pg_hba.conf.j2
+    dest: '{{ dbpath }}/pg_hba.conf'
+  notify: restartdb
+
+
+
+

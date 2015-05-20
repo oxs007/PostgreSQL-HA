@@ -1,0 +1,25 @@
+- name: Check for variables
+  fail: msg='Must pass -e pw for DB user, repl_pw for replication user'
+  when: (pw is not defined) or (repl_pw is not defined)
+
+- name: Check for OS version
+  fail: msg='Only tested on RHEL'
+  when: ansible_os_family != 'RedHat'
+
+- name: Check for pgdg94
+  command: rpm -q pgdg-redhat94
+  register: check
+  ignore_errors: true
+
+- name: Install pgdg94 yum repo
+  yum: name=http://yum.postgresql.org/9.4/redhat/rhel-6-x86_64/pgdg-redhat94-9.4-1.noarch.rpm state=present
+  when: check|failed
+
+- name: Ensure packages are installed
+  yum: name={{ item }}
+  with_items:
+    - libselinux-python
+    - postgresql94-server
+    - python-psycopg2
+    - python-devel
+    - gcc

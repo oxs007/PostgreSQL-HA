@@ -1,0 +1,18 @@
+---
+
+- hosts: all
+  sudo: yes
+  roles:
+    - common
+
+- hosts: primary
+  sudo: yes
+  sudo_user: postgres
+  roles:
+    - primary
+
+- hosts: secondary
+  sudo: yes
+  sudo_user: postgres
+  roles:
+    - secondary
