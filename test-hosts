@@ -1,0 +1,5 @@
+[primary]
+tower-1 ansible_ssh_host=52.4.31.249
+
+[secondary]
+tower-2 ansible_ssh_host=52.5.113.33

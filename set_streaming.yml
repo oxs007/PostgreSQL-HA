@@ -1,18 +1,24 @@
 ---
+- hosts: all
+  tags: ['primary', 'secondary']
+  gather_facts: yes
 
 - hosts: all
   sudo: yes
+  gather_facts: no
   roles:
     - common
 
 - hosts: primary
-  sudo: yes
-  sudo_user: postgres
+  gather_facts: no
+  become: yes
+  become_user: postgres
   roles:
-    - primary
+    - { role: primary, tags: ['primary'] }
 
 - hosts: secondary
-  sudo: yes
-  sudo_user: postgres
+  gather_facts: no
+  become: yes
+  become_user: postgres
   roles:
-    - secondary
+    - { role: secondary, tags: ['secondary'] }
